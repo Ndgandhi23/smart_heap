@@ -7,6 +7,7 @@
 
 static int heap_init = 0;
 
+
 // already declares the heap globally but requires initializing 
     // aka setting the bytes equal to free bc right now they hold random info
 static union { 
@@ -36,6 +37,12 @@ void * mymalloc (size_t size, char *file, int line){
     // OR returns null with additional print statement in this format:
         // malloc: Unable to allocate 1234 bytes (source.c:1000)
 
+    int roundedSize = (size + 7) & ~7;
+    
+    for(int i=0; i<heap.bytes.length; i++){
+        
+    }
+    
 }
 
 void myfree (void *ptr, char *file, int line){
@@ -43,9 +50,17 @@ void myfree (void *ptr, char *file, int line){
         heap_init = 1; 
         initilize_heap();
     }
+
+    // myfree should merge adjacent free chunks together so we dont need to worry about
+        // that in mymalloc
 }
 
 // initializes the heap to 0 or whatever is equal to a free space
 void initilize_heap(){
     
+    // treat as one large chunk at first and edit as you go
+    // have one big header to start which accounts for all the space
+        // when mymalloc is first called:
+            // edits header to be smaller to match memory required
+            // creates a new header trailing the chunk to account for the rest of the free memory
 }
