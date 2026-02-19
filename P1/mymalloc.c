@@ -35,7 +35,7 @@ void initilize_heap(){
     firstHeader.size = MEMLENGTH - sizeof(struct header);
 
     memcpy((struct header*)&heap.bytes, &firstHeader, sizeof(struct header));
-    printf("\nMade first header");
+    printf("\nMade first header\n");
 
 }
 
@@ -47,7 +47,7 @@ void * mymalloc (size_t size, char *file, int line){
     }
 
     int roundedSize = (size + 7) & ~7; //rounds size to a multiple of 8
-    printf("\ntest %d's rounded size: %d",line,roundedSize);
+    //printf("\ntest %d's rounded size: %d",line,roundedSize);
 
     struct header headerToAllocate; // header we want to put into heap
     headerToAllocate.size = roundedSize;
@@ -71,7 +71,6 @@ void * mymalloc (size_t size, char *file, int line){
             if((headerToCheck.size - headerToAllocate.size >= 8)){ 
                 newHeader.size = headerToCheck.size - headerToAllocate.size - sizeof(struct header);
                 memcpy((struct header*)(heap.bytes + i + sizeof(struct header) + roundedSize), &newHeader, sizeof(struct header)); // put newHeader into heap.bytes
-                newHeaderCtr++;
             }
             
             result = (void*)(heap.bytes + i + sizeof(headerToAllocate)); // pointer to the payload
@@ -105,10 +104,7 @@ void myfree (void *ptr, char *file, int line){
 
     // step 2
         // traverse through array going forward and merge any adjacent chunk before current free one
-            // delete header that is within free chunk
-    
-        
-
-    
+            // delete header that is within free chunk    
+            
 }
 
