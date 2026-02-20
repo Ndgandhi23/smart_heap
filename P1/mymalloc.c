@@ -131,7 +131,20 @@ void myfree (void *ptr, char *file, int line){
     // step 2
         // traverse through array going forward and merge any adjacent chunk before current free one
             // delete header that is within free chunk    
-            
+     
+    struct header currHead = *(struct header *)((char *)ptr - 8);
+    currHead.freed = 1;
+
+    memset(ptr, '\0', currHead.size);
+    
+    struct header nextHead = *(struct header*)((char*)ptr + currHead.size);
+    if(nextHead.freed == 1){
+        currHead.size += (8 + nextHead.size);
+        char temp[8];
+        memset(temp, '\0', 8);
+        memcpy((char*)(ptr + currHead.size),temp,8);
+        memset((char*)(ptr + currHead.size + 8), '\0',nextHead.size);
+    }
 }
 
 
