@@ -22,8 +22,32 @@ struct header{
 };
 
 
+
+static void my_little_leaky(void){
+    struct header headerToCheck; // tracking header which jumps thorugh heap
+    int chunk_counter = 0;
+    int bytes_leaked = 0; 
+
+    for(int i=0; i<=MEMLENGTH-8;){ 
+        
+        memcpy(&headerToCheck, (struct header*)(heap.bytes + i), sizeof(struct header));
+
+        if(headerToCheck.freed == 0){
+            chunk_counter++;
+            bytes_leaked += headerToCheck.size;
+        }
+
+        i += (headerToCheck.size + sizeof(headerToCheck)); // i jumps to next header
+    }
+
+    if(chunk_counter > 0){
+        fprintf(stderr, "mymalloc: %d bytes leaked in %d objects.\n", bytes_leaked, chunk_counter);
+    }
+}
+
+
 // initializes the heap to 0 or whatever is equal to a free space
-void initilize_heap(){
+static void initilize_heap(){
     
     printf("\nIn initialize_heap()");
     // atexit(leak_detector);
@@ -36,6 +60,8 @@ void initilize_heap(){
 
     memcpy((struct header*)&heap.bytes, &firstHeader, sizeof(struct header));
     printf("\nMade first header\n");
+
+    atexit(my_little_leaky);
 
 }
 
@@ -81,10 +107,10 @@ void * mymalloc (size_t size, char *file, int line){
     }
 
     if (result == NULL){
-        printf("\nmalloc: Unable to allocate %d bytes (%s:%d)",size,file,line);
+        printf("\nmalloc: Unable to allocate %zu bytes (%s:%d)",size,file,line);
     }
 
-    return result;
+    return result; 
 }
 
 
@@ -107,4 +133,5 @@ void myfree (void *ptr, char *file, int line){
             // delete header that is within free chunk    
             
 }
+
 
