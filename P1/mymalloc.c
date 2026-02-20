@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "mymalloc.h"
 #include <string.h>
-
+#include <stdbool.h>
 #define MEMLENGTH 4096
 
 static int heap_init = 0;
@@ -113,6 +113,23 @@ void * mymalloc (size_t size, char *file, int line){
     return result; 
 }
 
+bool ptrExists(void *ptr){
+    
+    struct header headerToCheck; // tracking header which jumps thorugh heap
+
+    for(int i=0; i<=MEMLENGTH-8;){ 
+        
+        memcpy(&headerToCheck, (struct header*)(heap.bytes + i), sizeof(struct header));
+
+        if(&headerToCheck == ptr-8){
+            return true;
+        }
+
+        i += (headerToCheck.size + sizeof(headerToCheck)); // i jumps to next header
+    }
+
+    return false;
+}
 
 void myfree (void *ptr, char *file, int line){
     if(heap_init == 0){
@@ -132,19 +149,36 @@ void myfree (void *ptr, char *file, int line){
         // traverse through array going forward and merge any adjacent chunk before current free one
             // delete header that is within free chunk    
      
+
+    // CHECK IF POINTER EXISTS
+
+
+    // if(!ptrExists(ptr)){
+    //     printf("\nfree: Inappropriate pointer (%s:%d)",file,line);
+    //     return;
+    // }
+
+    // gets the header of the current pointer
     struct header currHead = *(struct header *)((char *)ptr - 8);
     currHead.freed = 1;
+    
 
     memset(ptr, '\0', currHead.size);
     
-    struct header nextHead = *(struct header*)((char*)ptr + currHead.size);
-    if(nextHead.freed == 1){
-        currHead.size += (8 + nextHead.size);
-        char temp[8];
-        memset(temp, '\0', 8);
-        memcpy((char*)(ptr + currHead.size),temp,8);
-        memset((char*)(ptr + currHead.size + 8), '\0',nextHead.size);
+    if((char*)ptr + currHead.size + sizeof(currHead) <= heap.bytes + MEMLENGTH){
+        struct header nextHead = *(struct header*)((char*)ptr + currHead.size);
+        if(nextHead.freed == 1){
+            currHead.size += (8 + nextHead.size);
+            char temp[8];
+            memset(temp, '\0', 8);
+            memcpy((char*)(ptr + currHead.size),temp,8);
+            memset((char*)(ptr + currHead.size + 8), '\0',nextHead.size);
+        }
     }
+    
+    
+  //  struct header prevHead;
+
 }
 
 
