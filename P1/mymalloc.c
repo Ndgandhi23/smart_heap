@@ -115,6 +115,7 @@ void * mymalloc (size_t size, char *file, int line){
     return result; 
 }
 
+
 bool ptrExists(void *ptr){
     if(ptr == NULL){
         return false;
@@ -227,7 +228,7 @@ void myfree (void *ptr, char *file, int line){
                 break;
             }
 
-            prevPtr = (struct header*)(prevPtr + sizeof(struct header) + prevHeader.size);
+            prevPtr = currPtr;
             memcpy(&prevHeader,prevPtr,sizeof(struct header));            
             i += (currHead.size + sizeof(struct header)); // i jumps to next header
         }
