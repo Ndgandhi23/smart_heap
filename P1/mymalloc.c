@@ -49,7 +49,7 @@ static void my_little_leaky(void){
 // initializes the heap to 0 or whatever is equal to a free space
 static void initilize_heap(){
     
-    printf("\nIn initialize_heap()");
+    printf("\nASMI DEGUB: In initialize_heap()");
     // atexit(leak_detector);
     memset(heap.bytes, '\0', MEMLENGTH);
 
@@ -59,7 +59,7 @@ static void initilize_heap(){
     firstHeader.size = MEMLENGTH - sizeof(struct header);
 
     memcpy((struct header*)&heap.bytes, &firstHeader, sizeof(struct header));
-    printf("\nMade first header\n");
+    printf("\nASMI DEBUG: Made first header\n");
 
     atexit(my_little_leaky);
 
@@ -97,6 +97,7 @@ void * mymalloc (size_t size, char *file, int line){
             if((headerToCheck.size - headerToAllocate.size >= 8)){ 
                 newHeader.size = headerToCheck.size - headerToAllocate.size - sizeof(struct header);
                 memcpy((struct header*)(heap.bytes + i + sizeof(struct header) + roundedSize), &newHeader, sizeof(struct header)); // put newHeader into heap.bytes
+                // ASMI DEBUG: coelate the new header to the stuff that comes after if its free
             }
             
             result = (void*)(heap.bytes + i + sizeof(headerToAllocate)); // pointer to the payload
@@ -110,24 +111,31 @@ void * mymalloc (size_t size, char *file, int line){
         printf("\nmalloc: Unable to allocate %zu bytes (%s:%d)",size,file,line);
     }
 
+    printf("\nASMI DEBUG: returning result pointer: %p \n", result);
     return result; 
 }
 
 bool ptrExists(void *ptr){
-    
+    if(ptr == NULL){
+        return false;
+    }
+    struct header *tempPtr; // pointer to header inside the heap
     struct header headerToCheck; // tracking header which jumps thorugh heap
 
     for(int i=0; i<=MEMLENGTH-8;){ 
         
-        memcpy(&headerToCheck, (struct header*)(heap.bytes + i), sizeof(struct header));
+        tempPtr = (struct header*)(heap.bytes + i); 
 
-        if(&headerToCheck == ptr-8){
+        if(tempPtr == ptr-sizeof(struct header)){
+            printf("\nASMI DEBUG: found the pointer %p at position %d \n", tempPtr, i);
             return true;
         }
 
+        memcpy(&headerToCheck, (struct header*)(heap.bytes + i), sizeof(struct header));
         i += (headerToCheck.size + sizeof(headerToCheck)); // i jumps to next header
     }
 
+    printf("\nASMI DEBUG: did not find the pointer %p anywhere\n", ptr);
     return false;
 }
 
@@ -151,33 +159,83 @@ void myfree (void *ptr, char *file, int line){
      
 
     // CHECK IF POINTER EXISTS
+    if(!ptrExists(ptr)){
+        printf("\nfree: Inappropriate pointer (%s:%d)\n",file,line);
+        return;
+    }
 
-
-    // if(!ptrExists(ptr)){
-    //     printf("\nfree: Inappropriate pointer (%s:%d)",file,line);
-    //     return;
-    // }
+    printf("\nASMI DEBUG: in test %d",line);
 
     // gets the header of the current pointer
-    struct header currHead = *(struct header *)((char *)ptr - 8);
-    currHead.freed = 1;
-    
 
+    //     struct header currHead = *(struct header *)((char *)ptr - sizeof(struct header));
+
+    struct header currHead; 
+    memcpy(&currHead, ptr-sizeof(struct header), sizeof(struct header));
+
+    if(currHead.freed == 1){ // freeing a pointer that is already free
+        printf("\nfree: Inappropriate pointer (%s:%d)\n",file,line);
+        return;
+    }
+
+    currHead.freed = 1;
     memset(ptr, '\0', currHead.size);
-    
-    if((char*)ptr + currHead.size + sizeof(currHead) <= heap.bytes + MEMLENGTH){
-        struct header nextHead = *(struct header*)((char*)ptr + currHead.size);
+    memcpy(ptr-sizeof(struct header), &currHead, sizeof(struct header));
+
+    // coalescing: 
+
+    // checks to see if the chunk after the current one if free as well
+    if((char*)(ptr + currHead.size) <= (char*)(heap.bytes + MEMLENGTH - sizeof(struct header))){ // checks if a next header exists
+        printf("\nASMI DEBUG: in if for nextHead");
+        //struct header nextHead = *(struct header*)((char*)ptr + currHead.size);
+        struct header nextHead;
+        memcpy(&nextHead,ptr+currHead.size,sizeof(struct header));
         if(nextHead.freed == 1){
-            currHead.size += (8 + nextHead.size);
-            char temp[8];
-            memset(temp, '\0', 8);
-            memcpy((char*)(ptr + currHead.size),temp,8);
-            memset((char*)(ptr + currHead.size + 8), '\0',nextHead.size);
+            printf("\nASMI DEBUG: coelating nextHead to currHead\n");
+            //memset((char*)(ptr + currHead.size), '\0',nextHead.size + sizeof(struct header)); // clears data
+            currHead.size += (sizeof(struct header) + nextHead.size); // increments size of header thats first
+            memcpy(ptr - sizeof(struct header), &currHead, sizeof(struct header)); // copies header back to heap
+            printf("\nASMI DEBUG: size of combined next ptr: %d",currHead.size);
         }
     }
-    
-    
-  //  struct header prevHead;
+    printf("\nASMI DEBUG: after next coelating: \n");
+   // traverse_heap();
+
+    printf("Heap Start: %p\n", (void*)heap.bytes);
+    printf("Target Head: %p\n", (void*)((char*)ptr - sizeof(struct header)));
+
+    #if 1
+    // original: ((void*)heap.bytes < (ptr - sizeof(struct header)))
+    if((char *)ptr - sizeof(struct header) > (char *)heap.bytes){
+        printf("\nASMI DEBUG: in if for prevHead");
+        struct header *currPtr;         
+        struct header *prevPtr = (struct header*)(heap.bytes);
+        struct header prevHeader;
+        memcpy(&prevHeader, prevPtr, sizeof(struct header));
+
+        for(int i = (sizeof(struct header) + prevHeader.size); i<=MEMLENGTH-8;){ 
+            
+            currPtr = (struct header*)(heap.bytes + i); 
+            memcpy(&currHead, currPtr, sizeof(struct header));
+
+            if(currPtr == ptr-sizeof(struct header)){
+                if(prevHeader.freed == 1){
+                    printf("\nASMI DEBUG: coelating prevHead to currHead\n");
+                    prevHeader.size += (sizeof(struct header) + currHead.size);
+                    memcpy(prevPtr,&prevHeader,sizeof(struct header));
+                }
+                break;
+            }
+
+            prevPtr = (struct header*)(prevPtr + sizeof(struct header) + prevHeader.size);
+            memcpy(&prevHeader,prevPtr,sizeof(struct header));            
+            i += (currHead.size + sizeof(struct header)); // i jumps to next header
+        }
+    }
+    #endif
+
+    printf("\nASMI DEBUG: after prev coelating: \n");
+    //traverse_heap();
 
 }
 

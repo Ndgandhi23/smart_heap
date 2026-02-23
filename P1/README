@@ -1,0 +1,3 @@
+Here are some notes on the program for edge case handling:
+1. If there is 8 bytes of free space in the middle of allocated chunks, we are placing a header there with payload of size 0
+2. The leak detection calculation is calculating the total of the allocated payloads. It is not calculating the amount the user asked for, because in some situations the amount the useer requests must be rounded up to a multiple of 8.
