@@ -4,6 +4,7 @@
 #include "mymalloc.h"
 #include <string.h>
 #include <stdbool.h>
+
 #define MEMLENGTH 4096
 
 static int heap_init = 0;
