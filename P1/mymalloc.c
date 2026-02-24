@@ -108,8 +108,8 @@ void * mymalloc (size_t size, char *file, int line){
     }
 
     if (result == NULL){
-        printf("\nmalloc: Unable to allocate %zu bytes (%s:%d)",size,file,line);
-    }
+        fprintf(stderr, "malloc: Unable to allocate %zu bytes (%s:%d)\n", size, file, line);
+    }   
 
    // printf("\nASMI DEBUG: returning result pointer: %p \n", result);
     return result; 
@@ -161,8 +161,8 @@ void myfree (void *ptr, char *file, int line){
 
     // CHECK IF POINTER EXISTS
     if(!ptrExists(ptr)){
-        printf("\nfree: Inappropriate pointer (%s:%d)\n",file,line);
-        return;
+        fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
+        exit(2);
     }
 
     //printf("\nASMI DEBUG: in test %d",line);
@@ -175,8 +175,8 @@ void myfree (void *ptr, char *file, int line){
     memcpy(&currHead, ptr-sizeof(struct header), sizeof(struct header));
 
     if(currHead.freed == 1){ // freeing a pointer that is already free
-        printf("\nfree: Inappropriate pointer (%s:%d)\n",file,line);
-        return;
+        fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
+        exit(2);
     }
 
     currHead.freed = 1;
