@@ -9,6 +9,5 @@ typedef struct TNode {
 
 TNode* bst_insert(TNode* root, int key);
 TNode* bst_remove(TNode* root, int key);
-int bst_contains(TNode* root, int key);
 
 #endif

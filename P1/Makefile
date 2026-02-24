@@ -1,5 +1,12 @@
 CC = gcc
-CFLAGS = -g -std=c99 -Wall -fsanitize=address,undefined
+
+# Base flags (safe everywhere)
+CFLAGS = -g -std=c99 -Wall
+
+# Sanitizers (enabled only if SAN=1 is passed)
+ifeq ($(SAN),1)
+CFLAGS += -fsanitize=address,undefined
+endif
 
 HDRS = mymalloc.h list.h tree.h
 

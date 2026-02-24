@@ -1,3 +1,63 @@
-Here are some notes on the program for edge case handling:
-1. If there is 8 bytes of free space in the middle of allocated chunks, we are placing a header there with payload of size 0
-2. The leak detection calculation is calculating the total of the allocated payloads. It is not calculating the amount the user asked for, because in some situations the amount the useer requests must be rounded up to a multiple of 8.
+README
+
+Partners
+--------
+Neil Gandhi (ndg53)
+Asmi Narsay (adn54)
+
+
+Test Plan
+---------
+All testing was done using memgrind.c. This file defines five different tasks (task1–task5) that stress our custom malloc/free implementation in different patterns. The tasks include repeated small allocations, batch allocation and freeing, randomized allocation/free sequences, and dynamic memory usage through linked lists and binary search trees.
+
+Each task is executed 50 times inside main, and we use gettimeofday() to measure total runtime and report the average time per iteration.
+
+At the end of each task, any remaining allocated memory is freed to ensure that any reported leaks reflect allocator errors rather than the test code itself.
+
+
+memgrind.c
+----------
+
+Task 1:
+- Allocates 1 byte and immediately frees it 120 times.
+
+Task 2:
+- Allocates 120 separate 1-byte blocks, then frees all of them.
+
+Task 3:
+- Randomly allocates and frees 1-byte blocks until 120 total allocations have occurred. Frees any remaining memory at the end.
+
+Task 4:
+- Performs 40 random insert/remove operations on a linked list, then frees any remaining nodes.
+
+Task 5:
+- Performs 40 random insert/remove operations on a binary search tree, tracking inserted keys and removing all remaining nodes at the end.
+
+mymalloc.c
+----------
+
+This file contains our implementation of a custom malloc and free using a fixed 4096-byte heap. The heap is just a global byte array. Every block in the heap starts with an 8-byte header that stores the size of the payload and whether the block is free or allocated.
+
+When mymalloc is called:
+- We round the requested size up to a multiple of 8 for alignment.
+- We scan the heap from the beginning (first-fit) looking for a free block large enough.
+- If we find one, we mark it as allocated.
+- If there is extra space left over, we split the block and create a new free block after it.
+- If no suitable block exists, we print an error message and return NULL.
+
+When myfree is called:
+- We first verify that the pointer actually exists in our heap and hasn’t already been freed.
+- If it’s invalid or a double free, we print an error message.
+- Otherwise, we mark the block as free and clear its payload.
+- We then coalesce (merge) with adjacent free blocks to reduce fragmentation. We merge with the next block if it’s free, and also check the previous block by scanning from the start of the heap.
+
+Leak Detection:
+- During heap initialization, we register a function with atexit().
+- When the program exits, it scans the heap and reports how many bytes and blocks were not freed.
+
+Notes
+-----
+
+1. If there are exactly 8 bytes of free space left between allocated chunks, we still place a header there. In this case, the header represents a free block with a payload size of 0. This keeps the heap structure consistent and prevents undefined gaps in the heap layout.
+
+2. The leak detection logic reports the total size of allocated payloads still marked as in use. It does not report the exact number of bytes originally requested by the user. This is because all allocations are rounded up to a multiple of 8 for alignment, so the stored payload size may be slightly larger than what was requested.
