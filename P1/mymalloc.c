@@ -141,7 +141,7 @@ void myfree (void *ptr, char *file, int line){
     }
 
     struct header currHead; 
-    memcpy(&currHead, (char*)(ptr-sizeof(struct header)), sizeof(struct header));
+    memcpy(&currHead, ((char*)(ptr)-sizeof(struct header)), sizeof(struct header));
 
     if(currHead.freed == 1){ // freeing a pointer that is already free
         fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
@@ -150,17 +150,17 @@ void myfree (void *ptr, char *file, int line){
 
     currHead.freed = 1;
     memset(ptr, '\0', currHead.size);
-    memcpy((char*)(ptr-sizeof(struct header)), &currHead, sizeof(struct header));
+    memcpy(((char*)(ptr) -sizeof(struct header)), &currHead, sizeof(struct header));
 
     // coalescing: 
 
     // checks to see if the chunk after the current one if free as well
-    if((char*)(ptr + currHead.size) <= (char*)(heap.bytes + MEMLENGTH - sizeof(struct header))){ // checks if a next header exists
+    if(((char*)(ptr) + currHead.size) <= (char*)(heap.bytes + MEMLENGTH - sizeof(struct header))){ // checks if a next header exists
         struct header nextHead;
         memcpy(&nextHead,ptr+currHead.size,sizeof(struct header));
         if(nextHead.freed == 1){
             currHead.size += (sizeof(struct header) + nextHead.size); // increments size of header thats first
-            memcpy((char*)(ptr - sizeof(struct header)), &currHead, sizeof(struct header)); // copies header back to heap
+            memcpy(((char*)(ptr) - sizeof(struct header)), &currHead, sizeof(struct header)); // copies header back to heap
         }
     }
 
