@@ -46,7 +46,6 @@ static void my_little_leaky(void){
 
 static void initilize_heap(){
     
-  //  printf("\nASMI DEGUB: In initialize_heap()");
     memset(heap.bytes, '\0', MEMLENGTH);
 
     // creates the first header with the rest of the heap being its free chunk
@@ -55,7 +54,6 @@ static void initilize_heap(){
     firstHeader.size = MEMLENGTH - sizeof(struct header);
 
     memcpy((struct header*)&heap.bytes, &firstHeader, sizeof(struct header));
- //   printf("\nASMI DEBUG: Made first header\n");
 
     atexit(my_little_leaky);
 
