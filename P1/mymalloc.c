@@ -118,7 +118,7 @@ bool ptrExists(void *ptr){
         
         tempPtr = (struct header*)(heap.bytes + i); 
 
-        if(tempPtr == ptr-sizeof(struct header)){ // found the pointer
+        if((char*)tempPtr == ((char*)ptr-sizeof(struct header))){ // found the pointer
             return true;
         }
 
@@ -157,7 +157,7 @@ void myfree (void *ptr, char *file, int line){
     // checks to see if the chunk after the current one if free as well
     if(((char*)(ptr) + currHead.size) <= (char*)(heap.bytes + MEMLENGTH - sizeof(struct header))){ // checks if a next header exists
         struct header nextHead;
-        memcpy(&nextHead,ptr+currHead.size,sizeof(struct header));
+        memcpy(&nextHead,((char*)ptr+currHead.size),sizeof(struct header));
         if(nextHead.freed == 1){
             currHead.size += (sizeof(struct header) + nextHead.size); // increments size of header thats first
             memcpy(((char*)(ptr) - sizeof(struct header)), &currHead, sizeof(struct header)); // copies header back to heap
@@ -176,7 +176,7 @@ void myfree (void *ptr, char *file, int line){
             currPtr = (struct header*)(heap.bytes + i); 
             memcpy(&currHead, currPtr, sizeof(struct header));
 
-            if(currPtr == ptr-sizeof(struct header)){ // finds the header before the current one
+            if((char*)currPtr == ((char*)ptr-sizeof(struct header))){ // finds the header before the current one
                 if(prevHeader.freed == 1){ // checks to see if that is a free chunk
                     prevHeader.size += (sizeof(struct header) + currHead.size);
                     memcpy(prevPtr,&prevHeader,sizeof(struct header));

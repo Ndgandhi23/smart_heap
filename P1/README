@@ -8,7 +8,7 @@ Asmi Narsay (adn54)
 
 Test Plan
 ---------
-All testing was done using memgrind.c. This file defines five different tasks (task1–task5) that stress our custom malloc/free implementation in different patterns. The tasks include repeated small allocations, batch allocation and freeing, randomized allocation/free sequences, and dynamic memory usage through linked lists and binary search trees.
+All testing was done using memgrind.c and memtest.c. This file defines five different tasks (task1–task5) that stress our custom malloc/free implementation in different patterns. The tasks include repeated small allocations, batch allocation and freeing, randomized allocation/free sequences, and dynamic memory usage through linked lists and binary search trees.
 
 Each task is executed 50 times inside main, and we use gettimeofday() to measure total runtime and report the average time per iteration.
 
