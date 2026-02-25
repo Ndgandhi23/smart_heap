@@ -44,6 +44,7 @@ When mymalloc is called:
 - If we find one, we mark it as allocated.
 - If there is extra space left over, we split the block and create a new free block after it.
 - If no suitable block exists, we print an error message and return NULL.
+- If the user asks for 0 bytes, then we create an allocated header with payload size 0
 
 When myfree is called:
 - We first verify that the pointer actually exists in our heap and hasn’t already been freed.
