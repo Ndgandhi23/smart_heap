@@ -6,17 +6,14 @@ Neil Gandhi (ndg53)
 Asmi Narsay (adn54)
 
 
-Test Plan
----------
-All testing was done using memgrind.c and memtest.c. This file defines five different tasks (task1–task5) that stress our custom malloc/free implementation in different patterns. The tasks include repeated small allocations, batch allocation and freeing, randomized allocation/free sequences, and dynamic memory usage through linked lists and binary search trees.
+memgrind.c
+----------
+
+This file defines five different tasks (task1–task5) that stress our custom malloc/free implementation in different patterns. The tasks include repeated small allocations, batch allocation and freeing, randomized allocation/free sequences, and dynamic memory usage through linked lists and binary search trees.
 
 Each task is executed 50 times inside main, and we use gettimeofday() to measure total runtime and report the average time per iteration.
 
 At the end of each task, any remaining allocated memory is freed to ensure that any reported leaks reflect allocator errors rather than the test code itself.
-
-
-memgrind.c
-----------
 
 Task 1:
 - Allocates 1 byte and immediately frees it 120 times.
@@ -56,7 +53,45 @@ Leak Detection:
 - During heap initialization, we register a function with atexit().
 - When the program exits, it scans the heap and reports how many bytes and blocks were not freed.
 
-Notes
+
+Testing Plan:
+-------------
+The testing files used are named the following: coalescing_and_leak_testing.c, free_test_1.c, free_test_2.c, and free_test_3.c. These files each contain function that represent different scenarios to test for and return messages saying the test passed or failed and/or error/leak detection messages. 
+
+1. coalescing_and_leak_testing.c:
+- This file tests for both coalescing and leak testing in its functions
+- scenario1() tests for rounding and overlapping in allocations
+    - It tests for rounding by calling malloc() on an integer that is not divisible by 8. mymalloc() is then meant to round
+    it up to the first mutliple of 8 bytes. We check for this by seeing the difference between the first and second allocated pointers and making sure they are a specific number of bytes away from each other to ensure rounding had occurred 
+    - It also tests for overlapping when allocating. It does this by calling malloc() twice, and filling the first pointer with a string literal of '1's and the second pointer with a string literal of '2's. Then we check to see if the string literal of '1's is still the same by calling strcmp() with a string literal of the same length and pattern of '1's
+- scenario2() tests to make sure mymalloc() does not allocate memory if it is not available
+    - We test this by filling up the heap with malloc() calls and then calling once more to ensure that our function returns a NULL pointer, since there is not longer space in the heap for more allocations
+- scenario3() tests coalescing before and after the current chunk, which is done by our myfree() function
+    - We test this by first allocating all of the space in the heap with 2 different malloc() calls
+        - By our design, the integers we chose result in 2 large chunks and one empty header at the end which takes up 8 bytes but is free with a payload size of 0
+    - We then free the first chunk allocated, which does not result in any coalescing
+    - Then, we free the second chunk. By freeing the second chunk, it should coalesce with the first chunk and the free header after the second chunk
+    - We test to make sure this occurred by then trying to allocate the entire heap with one malloc() call. If it is successfully allocated, we know that coalescing must have occurred since there was a big enough chunk to allocate that data.
+- scenario4() tests the leak detector by calling malloc() but not free(). This should result in the leak error being printed out
+
+2. free_test_1 tests for the first error mentioned in section 2 of the writeup: "Calling free() with an address not obtained from malloc()."
+- scenario1() tests this by creating an integer variable, not allocated by malloc(), and then attempting to free it.
+    - by returning error messages, it will show that the program keeps track of its headers, since it does not allow to free a chunk that does not exist.
+    - this should result in the innappropriate pointer error message being printed out
+
+3. free_test_2 tests for the second error mentioned in section 2 of the writeup: "Calling free() with an address not at the start of a chunk."
+- scenario1() tests this by obtaining a pointer via allocation and then attempting to free the pointer + 1.
+    - by returning error messages, it will show that the program keeps track of its headers, since it does not allow to free a chunk if its payload pointer is incorrect.
+    - this should result in the innappropriate pointer error message being printed out
+    - this should also result in a leak error message since the program exists once an issue is found, so it never gets the chance to free allocations, leading to a leak.
+
+4. free_test_3 tests for the third error mentioned in section 2 of the writeup: "Calling free() a second time on the same pointer."
+- scenario1() tests this by obtaining a pointer via malloc() and then calling free() on the pointer, twice.
+    - by returning error messages, it will show that the program keeps track of free and allocated chunks.
+    - this should result in the innappropriate pointer error message being printed out
+    - this should also result in a leak error message since the program exists once an issue is found, so it never gets the chance to free allocations, leading to a leak.
+
+Design Notes:
 -----
 
 1. If there are exactly 8 bytes of free space left between allocated chunks, we still place a header there. In this case, the header represents a free block with a payload size of 0. This keeps the heap structure consistent and prevents undefined gaps in the heap layout.
